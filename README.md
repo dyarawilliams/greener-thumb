@@ -65,7 +65,7 @@
 
 <!-- TODO: Add a product screenshot to the repo and embed it here. No screenshot is checked in. The only images in the tree are public/img/splash_plant1.jpg, public/img/placeholder_plant.jpg, public/vite.svg, and src/assets/react.svg. -->
 
-Greener Thumb is a single-page app for picking indoor plants. The form in [`src/FormSection.jsx`](src/FormSection.jsx) asks about edible plants, pets or kids, lifespan, watering, and sunlight. Submitting it calls the Perenual species list with `indoor=1` and your selections, then [`src/PlantList.jsx`](src/PlantList.jsx) shows up to four matches.
+Greener Thumb is a single-page app for picking indoor plants. The form in [`src/FormSection.jsx`](src/FormSection.jsx) asks about edible plants, pets or kids, lifespan, watering, and sunlight. Submitting it calls the Perenual v2 species list with `indoor=1` and your selections, then [`src/PlantList.jsx`](src/PlantList.jsx) shows up to four matches.
 
 The npm package name is `greener-thumb-client` (`"private": true` in [`package.json`](package.json)). The page title in [`index.html`](index.html) is Greener Thumb, and the on-page tagline is "Murder Fewer Houseplants...maybe".
 
@@ -115,7 +115,7 @@ npm -v
    VITE_PERENUAL_API_KEY=your_perenual_api_key
    ```
 
-   The fetch runs in the browser, so this key is included in the client bundle. `dotenv` is listed in [`package.json`](package.json). No file under `src/` imports it.
+   The fetch runs in the browser, so this key is included in the client bundle. Vite reads `VITE_` variables itself; the app does not use the `dotenv` package.
 5. Start the dev server
    ```sh
    npm run dev
@@ -129,47 +129,42 @@ npm -v
 
 Open the app, leave any question on **No preference** to omit it, and submit. [`src/App.jsx`](src/App.jsx) passes the results into the plant list.
 
-The request URL is built in [`src/FormSection.jsx`](src/FormSection.jsx):
+The request URL is built in [`src/speciesList.js`](src/speciesList.js) and fetched from [`src/FormSection.jsx`](src/FormSection.jsx):
 
 ```text
-https://perenual.com/api/species-list?key=<VITE_PERENUAL_API_KEY>&indoor=1&<selected fields>
+https://perenual.com/api/v2/species-list?key=<VITE_PERENUAL_API_KEY>&indoor=1&<selected fields>
 ```
 
-`indoor` is always `1`. Empty fields are dropped before the query string is built. The current [Perenual docs](https://perenual.com/docs/api) demonstrate `https://perenual.com/api/v2/species-list`. This app calls the unversioned `/api/species-list` path.
+`indoor` is always `1`. Empty fields are dropped before the query string is built. [`src/speciesList.js`](src/speciesList.js) maps the form controls onto the parameter names and allowed values in the current [Perenual species-list docs](https://perenual.com/docs/api). Values outside that set are not sent.
 
 | Form label | Option shown | Query parameter | Value sent |
 | --- | --- | --- | --- |
 | EDIBLE | Yes | `edible` | `1` |
 | EDIBLE | No | `edible` | `0` |
-| PETS OR KIDS | Yes | `pets_kids` | `0` |
-| PETS OR KIDS | No | `pets_kids` | `1` |
-| LIFESPAN | Preferably forever - perennial | `lifespan` | `perennial` |
-| LIFESPAN | I'm here for a fun time, not a long time - annual | `lifespan` | `annual` |
-| WATER SCHEDULE | Yes - I have a regular schedule | `water_schedule` | `frequent` |
-| WATER SCHEDULE | Yes - every so often | `water_schedule` | `average` |
-| WATER SCHEDULE | Maybe - if I remember, but don't count on it... | `water_schedule` | `minimum` |
+| PETS OR KIDS | Yes (safe to have around) | `poisonous` | `0` |
+| PETS OR KIDS | No | `poisonous` | `1` |
+| LIFESPAN | Preferably forever - perennial | `cycle` | `perennial` |
+| LIFESPAN | I'm here for a fun time, not a long time - annual | `cycle` | `annual` |
+| WATER SCHEDULE | Yes - I have a regular schedule | `watering` | `frequent` |
+| WATER SCHEDULE | Yes - every so often | `watering` | `average` |
+| WATER SCHEDULE | Maybe - if I remember, but don't count on it... | `watering` | `minimum` |
 | SUNLIGHT | Full sun! | `sunlight` | `full_sun` |
 | SUNLIGHT | All shade, all the time | `sunlight` | `full_shade` |
 | SUNLIGHT | Equal parts sun and shade (or I dunno...) | `sunlight` | `part_shade` |
 
-On the [Perenual species-list docs](https://perenual.com/docs/api), `edible`, `sunlight`, and `indoor` are documented filters. The docs name the other three ideas `poisonous`, `cycle`, and `watering`. The form sends `pets_kids`, `lifespan`, and `water_schedule`.
+The docs also allow `cycle` values `biennial` and `biannual`, a `watering` value of `none`, and a `sunlight` value of `sun-part_shade`. The form does not offer those choices. `poisonous`, `edible`, and `indoor` are `0` or `1`.
 
-After the response arrives, any plant whose `cycle`, `watering`, or `sunlight` contains the string `Upgrade` is removed. Perenual uses that placeholder for fields locked on the free plan. The remaining plants are shuffled, and the list keeps the first four.
+The documented list body is `{ data: [...], to, per_page, current_page, from, last_page, total }`. Each list item includes `common_name`, `scientific_name`, and `default_image`. `cycle`, `watering`, and `sunlight` are documented on the species details endpoint, not on this list example. The app reads `data`. If one of those care fields is present and contains the string `Upgrade` (the free-plan placeholder), that plant is removed. The remaining plants are shuffled, and the list keeps the first four. A payload without a `data` array is treated as a failed request.
 
 Each card shows:
 
-* Common name and scientific names (`scientific_name` joined with commas)
-* `default_image.small_url` when Perenual sends an image
-* Lifecycle (`cycle`), watering, and sunlight
+* Common name, plus scientific names when `scientific_name` is an array or string (arrays are joined with commas)
+* `default_image.small_url` when Perenual sends one, otherwise `/img/placeholder_plant.jpg`
+* Lifecycle (`cycle`), watering, and sunlight only when that list item includes them
 
-If the filtered list is empty, the message is `No results returned, please modify your selection and try again.` If the request throws, the message is `Internal Server Error`.
+If the filtered list is empty, the message is `No results returned, please modify your selection and try again.` If the request throws, or the body is not a species list, the message is `Internal Server Error`.
 
-The fallback image paths in [`src/PlantList.jsx`](src/PlantList.jsx) are written with backslashes:
-
-* Splash, before any search: `public\img\splash_plant1.jpg`
-* Missing API photo: `\public\img\placeholder_plant.jpg`
-
-The files themselves are [`public/img/splash_plant1.jpg`](public/img/splash_plant1.jpg) and [`public/img/placeholder_plant.jpg`](public/img/placeholder_plant.jpg). Vite serves files from `public/` at the site root (`/img/splash_plant1.jpg` and `/img/placeholder_plant.jpg`). The `src` strings above include a `public` segment and backslashes.
+Before any search, the right-hand pane uses `/img/splash_plant1.jpg`. Vite serves [`public/img/splash_plant1.jpg`](public/img/splash_plant1.jpg) and [`public/img/placeholder_plant.jpg`](public/img/placeholder_plant.jpg) from the site root.
 
 ### Scripts
 
@@ -187,13 +182,13 @@ From [`package.json`](package.json):
 <!-- ROADMAP -->
 ## Roadmap
 
-- [ ] Confirm that `https://perenual.com/api/species-list` (the path in [`src/FormSection.jsx`](src/FormSection.jsx)) still matches the documented `https://perenual.com/api/v2/species-list` route, and point the fetch at the documented path if the unversioned one is retired.
-- [ ] Send the documented Perenual parameter names for the three filters that currently use other names: `poisonous` for pets or kids, `cycle` for lifespan, and `watering` for the water schedule. `edible`, `sunlight`, and `indoor=1` already match the names on the species-list docs.
-- [ ] Point the splash and placeholder images at `/img/splash_plant1.jpg` and `/img/placeholder_plant.jpg` so they load from `public/img/`.
+- [x] Call `https://perenual.com/api/v2/species-list`, the species-list route in the current Perenual docs.
+- [x] Send `poisonous` for pets or kids, `cycle` for lifespan, and `watering` for the water schedule. `edible`, `sunlight`, and `indoor=1` already matched the species-list docs.
+- [x] Load the splash and placeholder images from `/img/splash_plant1.jpg` and `/img/placeholder_plant.jpg`.
 - [ ] Report a missing `VITE_PERENUAL_API_KEY`, a non-OK response, and Perenual error payloads (invalid key, rate limit) in place of the generic `Internal Server Error` string.
 - [ ] Page through `species-list` results. The app requests the default page and then shuffles and keeps four plants.
 - [ ] Open a detail view for a chosen plant from the species details endpoint.
-- [ ] Remove the unused `dotenv` dependency. Vite already loads `.env`.
+- [x] Remove the unused `dotenv` dependency. Vite already loads `.env`.
 - [ ] Add tests for the filter form and the four-plant result list.
 
 See the [open issues](https://github.com/dyarawilliams/greener-thumb/issues) for a full list of proposed features (and known issues).

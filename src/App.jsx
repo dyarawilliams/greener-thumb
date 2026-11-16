@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import './App.css';
 import FormSection from './FormSection';
 import PlantList from './PlantList';
