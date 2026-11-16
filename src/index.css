@@ -1,0 +1,132 @@
+:root {
+  --bg: #f3f0e8;
+  --bg-accent: #e5f0cb;
+  --surface: #ffffff;
+  --ink: #14261c;
+  --muted: #3f5348;
+  --green: #1c7a43;
+  --green-deep: #163526;
+  --line: #e4ddd0;
+  --line-strong: #cfc6b6;
+  --focus: #146b38;
+  --lime: #dff08a;
+  --danger: #7f1d1d;
+  --danger-bg: #fdf2f2;
+  --danger-line: #f0c9c9;
+  --shadow: 0 16px 40px rgba(20, 38, 28, 0.08);
+  --shadow-soft: 0 8px 24px rgba(20, 38, 28, 0.06);
+  --radius: 24px;
+  --font: "Inter", "Segoe UI", sans-serif;
+  --shell: min(1120px, calc(100% - 2.5rem));
+  color-scheme: light;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: var(--font);
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--ink);
+  background:
+    radial-gradient(900px 420px at 100% -10%, rgba(223, 240, 138, 0.45), transparent 55%),
+    radial-gradient(700px 380px at -10% 15%, rgba(22, 53, 38, 0.06), transparent 50%),
+    var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+h1,
+h2,
+h3,
+p {
+  text-wrap: balance;
+}
+
+::selection {
+  background: var(--lime);
+  color: var(--ink);
+}
+
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+
+.skip-link {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skip-link:focus {
+  position: static;
+  display: block;
+  width: fit-content;
+  height: auto;
+  margin: 0.35rem auto 0.15rem;
+  padding: 0.55rem 0.9rem;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: var(--shadow-soft);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
