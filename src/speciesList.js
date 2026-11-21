@@ -94,7 +94,9 @@ export function formatCareValue(value) {
     return '';
 }
 
+export const PLACEHOLDER_PLANT_SRC = `${import.meta.env.BASE_URL}img/placeholder_plant.jpg`;
+
 export function plantImageSrc(plant) {
     const url = plant?.default_image?.small_url;
-    return typeof url === 'string' && url !== '' ? url : '/img/placeholder_plant.jpg';
+    return typeof url === 'string' && url !== '' ? url : PLACEHOLDER_PLANT_SRC;
 }

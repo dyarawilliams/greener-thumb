@@ -1,9 +1,8 @@
 import { useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
-import { formatCareValue, formatScientificName, plantImageSrc } from './speciesList';
+import { PLACEHOLDER_PLANT_SRC, formatCareValue, formatScientificName, plantImageSrc } from './speciesList';
 
 const ERROR_MESSAGE = 'Internal Server Error';
-const PLACEHOLDER_SRC = '/img/placeholder_plant.jpg';
 
 function presentCare(value) {
     const raw = formatCareValue(value);
@@ -128,7 +127,7 @@ const PlantList = ({ plants, message, isSearching }) => {
                             return (
                                 <li key={plant.id ?? `${title}-${index}`}>
                                     <article className="plant-card">
-                                        <div className={src === PLACEHOLDER_SRC ? 'plant-photo is-fallback' : 'plant-photo'}>
+                                        <div className={src === PLACEHOLDER_PLANT_SRC ? 'plant-photo is-fallback' : 'plant-photo'}>
                                             <img src={src} alt={alt} />
                                         </div>
                                         <div className="plant-body">
