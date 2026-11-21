@@ -67,9 +67,9 @@
 
 Greener Thumb is a single-page app for picking indoor plants. The form in [`src/FormSection.jsx`](src/FormSection.jsx) asks about edible plants, pets or kids, lifespan, watering, and sunlight. Submitting it calls the Perenual v2 species list with `indoor=1` and your selections, then [`src/PlantList.jsx`](src/PlantList.jsx) shows up to four matches.
 
-The npm package name is `greener-thumb-client` (`"private": true` in [`package.json`](package.json)). The page title in [`index.html`](index.html) is Greener Thumb, and the on-page tagline is "Murder Fewer Houseplants...maybe".
+The npm package name is `greener-thumb-client` (`"private": true` in [`package.json`](package.json)). The page title in [`index.html`](index.html) is Greener Thumb, and the on-page headline is "Murder fewer houseplants…maybe".
 
-Before the first search, the right-hand pane renders the splash photo at [`public/img/splash_plant1.jpg`](public/img/splash_plant1.jpg). This README is the project documentation.
+The landing hero uses the splash photo at [`public/img/splash_plant1.jpg`](public/img/splash_plant1.jpg). The form sits under the hero, and matches render as cards below the form. Before a search, that section says results will appear there. While a request is in flight, the results area shows a searching state. This README is the project documentation.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -137,20 +137,22 @@ https://perenual.com/api/v2/species-list?key=<VITE_PERENUAL_API_KEY>&indoor=1&<s
 
 `indoor` is always `1`. Empty fields are dropped before the query string is built. [`src/speciesList.js`](src/speciesList.js) maps the form controls onto the parameter names and allowed values in the current [Perenual species-list docs](https://perenual.com/docs/api). Values outside that set are not sent.
 
+The questions are radio groups. **No preference** sends nothing for that field.
+
 | Form label | Option shown | Query parameter | Value sent |
 | --- | --- | --- | --- |
-| EDIBLE | Yes | `edible` | `1` |
-| EDIBLE | No | `edible` | `0` |
-| PETS OR KIDS | Yes (safe to have around) | `poisonous` | `0` |
-| PETS OR KIDS | No | `poisonous` | `1` |
-| LIFESPAN | Preferably forever - perennial | `cycle` | `perennial` |
-| LIFESPAN | I'm here for a fun time, not a long time - annual | `cycle` | `annual` |
-| WATER SCHEDULE | Yes - I have a regular schedule | `watering` | `frequent` |
-| WATER SCHEDULE | Yes - every so often | `watering` | `average` |
-| WATER SCHEDULE | Maybe - if I remember, but don't count on it... | `watering` | `minimum` |
-| SUNLIGHT | Full sun! | `sunlight` | `full_sun` |
-| SUNLIGHT | All shade, all the time | `sunlight` | `full_shade` |
-| SUNLIGHT | Equal parts sun and shade (or I dunno...) | `sunlight` | `part_shade` |
+| Do you want a plant you can eat? | Yes | `edible` | `1` |
+| Do you want a plant you can eat? | No | `edible` | `0` |
+| Will pets or kids share the room? | Yes — safe to have around | `poisonous` | `0` |
+| Will pets or kids share the room? | No | `poisonous` | `1` |
+| How long should it live? | Preferably forever - perennial | `cycle` | `perennial` |
+| How long should it live? | I'm here for a fun time, not a long time - annual | `cycle` | `annual` |
+| How often can you water? | Yes - I have a regular schedule | `watering` | `frequent` |
+| How often can you water? | Yes - every so often | `watering` | `average` |
+| How often can you water? | Maybe - if I remember, but don't count on it... | `watering` | `minimum` |
+| How much light does the spot get? | Full sun! | `sunlight` | `full_sun` |
+| How much light does the spot get? | All shade, all the time | `sunlight` | `full_shade` |
+| How much light does the spot get? | Equal parts sun and shade (or I dunno...) | `sunlight` | `part_shade` |
 
 The docs also allow `cycle` values `biennial` and `biannual`, a `watering` value of `none`, and a `sunlight` value of `sun-part_shade`. The form does not offer those choices. `poisonous`, `edible`, and `indoor` are `0` or `1`.
 
@@ -158,7 +160,7 @@ The documented list body is `{ data: [...], to, per_page, current_page, from, la
 
 Each card shows:
 
-* Common name, plus scientific names when `scientific_name` is an array or string (arrays are joined with commas)
+* Common name as the heading. Scientific names, when `scientific_name` is an array or string, appear under it in italics (arrays are joined with commas). If the common name is missing, the scientific name is the heading.
 * `default_image.small_url` when Perenual sends one, otherwise `/img/placeholder_plant.jpg`
 * Lifecycle (`cycle`), watering, and sunlight only when that list item includes them
 

@@ -1,8 +1,58 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 import { buildSpeciesListUrl, plantsFromSpeciesList } from './speciesList';
 
-const FormSection = ({ setPlants, setMessage }) => {
+const QUESTIONS = [
+    {
+        name: 'edible',
+        legend: 'Do you want a plant you can eat?',
+        options: [
+            { value: '', label: 'No preference' },
+            { value: '1', label: 'Yes' },
+            { value: '0', label: 'No' },
+        ],
+    },
+    {
+        name: 'pets_kids',
+        legend: 'Will pets or kids share the room?',
+        options: [
+            { value: '', label: 'No preference' },
+            { value: '0', label: 'Yes — safe to have around' },
+            { value: '1', label: 'No' },
+        ],
+    },
+    {
+        name: 'lifespan',
+        legend: 'How long should it live?',
+        options: [
+            { value: '', label: 'No preference' },
+            { value: 'perennial', label: 'Preferably forever - perennial' },
+            { value: 'annual', label: "I'm here for a fun time, not a long time - annual" },
+        ],
+    },
+    {
+        name: 'water_schedule',
+        legend: 'How often can you water?',
+        options: [
+            { value: '', label: 'No preference' },
+            { value: 'frequent', label: 'Yes - I have a regular schedule' },
+            { value: 'average', label: 'Yes - every so often' },
+            { value: 'minimum', label: "Maybe - if I remember, but don't count on it..." },
+        ],
+    },
+    {
+        name: 'sunlight',
+        legend: 'How much light does the spot get?',
+        options: [
+            { value: '', label: 'No preference' },
+            { value: 'full_sun', label: 'Full sun!' },
+            { value: 'full_shade', label: 'All shade, all the time' },
+            { value: 'part_shade', label: 'Equal parts sun and shade (or I dunno...)' },
+        ],
+    },
+];
+
+const FormSection = ({ setPlants, setMessage, setIsSearching, isSearching }) => {
     const [formData, setFormData] = useState({
         edible: '',
         pets_kids: '',
@@ -10,6 +60,7 @@ const FormSection = ({ setPlants, setMessage }) => {
         water_schedule: '',
         sunlight: ''
     });
+    const inFlight = useRef(false);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -28,6 +79,12 @@ const FormSection = ({ setPlants, setMessage }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (inFlight.current) {
+            return;
+        }
+        inFlight.current = true;
+        setIsSearching(true);
+        setMessage(null);
         const apiUrl = buildSpeciesListUrl(formData, import.meta.env.VITE_PERENUAL_API_KEY);
 
         try {
@@ -53,53 +110,61 @@ const FormSection = ({ setPlants, setMessage }) => {
             console.error('Error:', error);
             setPlants([]);
             setMessage("Internal Server Error");
+        } finally {
+            inFlight.current = false;
+            setIsSearching(false);
         }
     };
 
     return (
-        <div className="form-section">
-            <h1>Greener Thumb</h1>
-            <h2>Murder Fewer Houseplants...maybe</h2>
-            <form id="plant-form" onSubmit={handleSubmit}>
-                {['edible', 'pets_kids', 'lifespan', 'water_schedule', 'sunlight'].map((field) => (
-                    <div className="question" key={field}>
-                        <label htmlFor={field}>{field === 'pets_kids' ? 'PETS OR KIDS' : field.replace('_', ' ').toUpperCase()}</label>
-                        <select name={field} id={field} value={formData[field]} onChange={handleChange}>
-                            <option value="">No preference</option>
-                            {field === 'edible' && <>
-                                <option value="1">Yes</option>
-                                <option value="0">No</option>
-                            </>}
-                            {field === 'pets_kids' && <>
-                                <option value="0">Yes</option>
-                                <option value="1">No</option>
-                            </>}
-                            {field === 'lifespan' && <>
-                                <option value="perennial">Preferably forever - perennial</option>
-                                <option value="annual">{"I'm here for a fun time, not a long time - annual"}</option>
-                            </>}
-                            {field === 'water_schedule' && <>
-                                <option value="frequent">Yes - I have a regular schedule</option>
-                                <option value="average">Yes - every so often</option>
-                                <option value="minimum">Maybe - if I remember, but don&apos;t count on it...</option>
-                            </>}
-                            {field === 'sunlight' && <>
-                                <option value="full_sun">Full sun!</option>
-                                <option value="full_shade">All shade, all the time</option>
-                                <option value="part_shade">Equal parts sun and shade (or I dunno...)</option>
-                            </>}
-                        </select>
+        <section className="finder" id="finder" tabIndex={-1} aria-labelledby="finder-title">
+            <div className="shell finder-card">
+                <p className="section-kicker">The finder</p>
+                <h2 id="finder-title" className="section-title">What does your space look like?</h2>
+                <p className="section-intro">
+                    Every question is optional. Leave a choice on No preference and it stays out of the search.
+                </p>
+                <form id="plant-form" onSubmit={handleSubmit}>
+                    {QUESTIONS.map((question) => (
+                        <fieldset className="question" key={question.name}>
+                            <legend>{question.legend}</legend>
+                            <div className="choices">
+                                {question.options.map((option) => {
+                                    const id = `${question.name}-${option.value || 'any'}`;
+                                    return (
+                                        <label className="choice" key={id} htmlFor={id}>
+                                            <input
+                                                type="radio"
+                                                id={id}
+                                                name={question.name}
+                                                value={option.value}
+                                                checked={formData[question.name] === option.value}
+                                                onChange={handleChange}
+                                            />
+                                            <span>{option.label}</span>
+                                        </label>
+                                    );
+                                })}
+                            </div>
+                        </fieldset>
+                    ))}
+                    <div className="form-actions">
+                        <button type="submit" className="button button-primary" disabled={isSearching}>
+                            {isSearching ? 'Searching…' : 'Show plant matches'}
+                        </button>
+                        <p className="form-note">Up to four indoor plants.</p>
                     </div>
-                ))}
-                <button type="submit">Submit</button>
-            </form>
-        </div>
+                </form>
+            </div>
+        </section>
     );
 };
 
 FormSection.propTypes = {
     setPlants: PropTypes.func.isRequired,
     setMessage: PropTypes.func.isRequired,
+    setIsSearching: PropTypes.func.isRequired,
+    isSearching: PropTypes.bool.isRequired,
 };
 
 export default FormSection;
