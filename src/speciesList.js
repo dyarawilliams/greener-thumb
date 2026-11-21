@@ -96,7 +96,54 @@ export function formatCareValue(value) {
 
 export const PLACEHOLDER_PLANT_SRC = `${import.meta.env.BASE_URL}img/placeholder_plant.jpg`;
 
+const PLANT_IMAGE_FIELDS = ['small_url', 'medium_url', 'regular_url', 'thumbnail', 'original_url'];
+
+// The free tier often sets an image URL to upgrade_access.jpg. That file is
+// not an image response, so treat it, and any empty URL, as missing.
+function usablePlantImageUrl(url) {
+    if (typeof url !== 'string') {
+        return null;
+    }
+    const trimmed = url.trim();
+    if (trimmed === '' || trimmed.toLowerCase().includes('upgrade_access')) {
+        return null;
+    }
+    return trimmed;
+}
+
 export function plantImageSrc(plant) {
-    const url = plant?.default_image?.small_url;
-    return typeof url === 'string' && url !== '' ? url : PLACEHOLDER_PLANT_SRC;
+    const image = plant?.default_image;
+    if (image && typeof image === 'object') {
+        for (const field of PLANT_IMAGE_FIELDS) {
+            const url = usablePlantImageUrl(image[field]);
+            if (url) {
+                return url;
+            }
+        }
+    }
+    return PLACEHOLDER_PLANT_SRC;
+}
+
+function shufflePlants(plants) {
+    const copy = [...plants];
+    for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+    }
+    return copy;
+}
+
+// Prefer plants with a real photo. Fill leftover slots from plants that only
+// have the placeholder when there are not enough photos.
+export function pickPlantCards(plants, limit = 4) {
+    const withImage = [];
+    const withoutImage = [];
+    plants.forEach((plant) => {
+        if (plantImageSrc(plant) === PLACEHOLDER_PLANT_SRC) {
+            withoutImage.push(plant);
+        } else {
+            withImage.push(plant);
+        }
+    });
+    return [...shufflePlants(withImage), ...shufflePlants(withoutImage)].slice(0, limit);
 }

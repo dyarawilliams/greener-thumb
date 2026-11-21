@@ -23,6 +23,8 @@
     <a href="https://github.com/dyarawilliams/greener-thumb#readme"><strong>Explore the docs »</strong></a>
     <br />
     <br />
+    <a href="https://dyarawilliams.github.io/greener-thumb/">View Demo</a>
+    &middot;
     <a href="https://github.com/dyarawilliams/greener-thumb/issues/new?labels=bug">Report Bug</a>
     &middot;
     <a href="https://github.com/dyarawilliams/greener-thumb/issues/new?labels=enhancement">Request Feature</a>
@@ -64,7 +66,11 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-<!-- TODO: Add a product screenshot to the repo and embed it here. No screenshot is checked in. The only images in the tree are public/img/splash_plant1.jpg, public/img/placeholder_plant.jpg, public/vite.svg, and src/assets/react.svg. -->
+<a href="https://dyarawilliams.github.io/greener-thumb/">
+  <img src="docs/app-screenshot.png" alt="Greener Thumb matches for frequent watering and full sun, with four plant photos" width="820">
+</a>
+
+The live demo is [https://dyarawilliams.github.io/greener-thumb/](https://dyarawilliams.github.io/greener-thumb/).
 
 Greener Thumb is a single-page app for picking indoor plants. The form in [`src/FormSection.jsx`](src/FormSection.jsx) asks about edible plants, pets or kids, lifespan, watering, and sunlight. Submitting it calls the Perenual v2 species list with `indoor=1` and your selections, then [`src/PlantList.jsx`](src/PlantList.jsx) shows up to four matches.
 
@@ -80,6 +86,7 @@ The landing hero uses the splash photo at [`public/img/splash_plant1.jpg`](publi
 * [![Vite][Vite]][Vite-url]
 * [![JavaScript][JavaScript]][JavaScript-url]
 * [![ESLint][ESLint]][ESLint-url]
+* [![GitHub Pages][GitHub-Pages]][GitHub-Pages-url]
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -157,12 +164,14 @@ The questions are radio groups. **No preference** sends nothing for that field.
 
 The docs also allow `cycle` values `biennial` and `biannual`, a `watering` value of `none`, and a `sunlight` value of `sun-part_shade`. The form does not offer those choices. `poisonous`, `edible`, and `indoor` are `0` or `1`.
 
-The documented list body is `{ data: [...], to, per_page, current_page, from, last_page, total }`. Each list item includes `common_name`, `scientific_name`, and `default_image`. `cycle`, `watering`, and `sunlight` are documented on the species details endpoint, not on this list example. The app reads `data`. If one of those care fields is present and contains the string `Upgrade` (the free-plan placeholder), that plant is removed. The remaining plants are shuffled, and the list keeps the first four. A payload without a `data` array is treated as a failed request.
+The documented list body is `{ data: [...], to, per_page, current_page, from, last_page, total }`. Each list item includes `common_name`, `scientific_name`, and `default_image`. `cycle`, `watering`, and `sunlight` are documented on the species details endpoint, not on this list example. The app reads `data`. If one of those care fields is present and contains the string `Upgrade` (the free-plan placeholder), that plant is removed. A payload without a `data` array is treated as a failed request.
+
+[`pickPlantCards`](src/speciesList.js) then keeps up to four plants. It shuffles the plants that have a usable photo and takes those first. If fewer than four have a usable photo, it fills the remaining slots from a shuffle of the plants that only have the placeholder.
 
 Each card shows:
 
 * Common name as the heading. Scientific names, when `scientific_name` is an array or string, appear under it in italics (arrays are joined with commas). If the common name is missing, the scientific name is the heading.
-* `default_image.small_url` when Perenual sends one, otherwise `/greener-thumb/img/placeholder_plant.jpg`
+* A photo from `default_image`. On the free tier, Perenual often sets image fields to a URL containing `upgrade_access` (for example `small_url`). Those URLs are not images. [`plantImageSrc`](src/speciesList.js) treats a URL containing `upgrade_access`, and an empty URL, as missing. It tries `small_url`, then `medium_url`, `regular_url`, `thumbnail`, and `original_url`, and uses the first real one. Some list items have only `original_url`. If every field is missing, or the chosen image fails to load, the card uses the local placeholder once. That file is [`public/img/placeholder_plant.jpg`](public/img/placeholder_plant.jpg), served as `/greener-thumb/img/placeholder_plant.jpg` from Vite's `BASE_URL`.
 * Lifecycle (`cycle`), watering, and sunlight only when that list item includes them
 
 If the filtered list is empty, the message is `No results returned, please modify your selection and try again.` If the request throws, or the body is not a species list, the message is `Internal Server Error`.
@@ -189,10 +198,7 @@ The live site is [https://dyarawilliams.github.io/greener-thumb/](https://dyaraw
 
 [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) runs `npm ci` and `npm run build`, then deploys the `dist/` folder with the official GitHub Pages actions. It runs on every push to `main`, and it can be started manually from the Actions tab.
 
-After this workflow is on `main`, finish the repository setup:
-
-1. Open **Settings → Pages → Build and deployment** and set **Source** to **GitHub Actions**.
-2. Open **Settings → Secrets and variables → Actions** and add a repository secret named `VITE_PERENUAL_API_KEY`. The build step passes that secret to Vite.
+The workflow deploys with GitHub Actions, so **Settings → Pages → Build and deployment → Source** is **GitHub Actions**. The build step passes the repository secret `VITE_PERENUAL_API_KEY` (**Settings → Secrets and variables → Actions**) to Vite.
 
 The site still builds and the page still renders if the secret is missing. Plant search then calls Perenual without a usable key and shows the existing error state.
 
@@ -206,6 +212,7 @@ Vite inlines every `VITE_` variable into the client bundle. `VITE_PERENUAL_API_K
 - [x] Call `https://perenual.com/api/v2/species-list`, the species-list route in the current Perenual docs.
 - [x] Send `poisonous` for pets or kids, `cycle` for lifespan, and `watering` for the water schedule. `edible`, `sunlight`, and `indoor=1` already matched the species-list docs.
 - [x] Load the splash and placeholder images from `public/img/`, served under the Vite base (`/greener-thumb/img/splash_plant1.jpg` and `/greener-thumb/img/placeholder_plant.jpg`).
+- [x] Skip Perenual free-tier `upgrade_access` image URLs, try the other `default_image` sizes, and fall back to the local placeholder.
 - [ ] Report a missing `VITE_PERENUAL_API_KEY`, a non-OK response, and Perenual error payloads (invalid key, rate limit) in place of the generic `Internal Server Error` string.
 - [ ] Page through `species-list` results. The app requests the default page and then shuffles and keeps four plants.
 - [ ] Open a detail view for a chosen plant from the species details endpoint.
@@ -286,3 +293,5 @@ Project Link: [https://github.com/dyarawilliams/greener-thumb](https://github.co
 [JavaScript-url]: https://developer.mozilla.org/docs/Web/JavaScript
 [ESLint]: https://img.shields.io/badge/ESLint-4B32C3?style=for-the-badge&logo=eslint&logoColor=white
 [ESLint-url]: https://eslint.org/
+[GitHub-Pages]: https://img.shields.io/badge/GitHub%20Pages-222222?style=for-the-badge&logo=githubpages&logoColor=white
+[GitHub-Pages-url]: https://pages.github.com/
