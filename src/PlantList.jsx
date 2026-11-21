@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 import { PLACEHOLDER_PLANT_SRC, formatCareValue, formatScientificName, plantImageSrc } from './speciesList';
 
@@ -33,6 +33,41 @@ function viewState(plants, message, isSearching) {
     }
     return 'empty';
 }
+
+const defaultImageShape = PropTypes.shape({
+    small_url: PropTypes.string,
+    medium_url: PropTypes.string,
+    regular_url: PropTypes.string,
+    thumbnail: PropTypes.string,
+    original_url: PropTypes.string,
+});
+
+function PlantPhoto({ plant, alt }) {
+    const preferred = plantImageSrc(plant);
+    const [failedSrc, setFailedSrc] = useState(null);
+    const src = failedSrc === preferred ? PLACEHOLDER_PLANT_SRC : preferred;
+
+    return (
+        <div className={src === PLACEHOLDER_PLANT_SRC ? 'plant-photo is-fallback' : 'plant-photo'}>
+            <img
+                src={src}
+                alt={alt}
+                onError={() => {
+                    if (src !== PLACEHOLDER_PLANT_SRC) {
+                        setFailedSrc(preferred);
+                    }
+                }}
+            />
+        </div>
+    );
+}
+
+PlantPhoto.propTypes = {
+    plant: PropTypes.shape({
+        default_image: defaultImageShape,
+    }),
+    alt: PropTypes.string.isRequired,
+};
 
 const PlantList = ({ plants, message, isSearching }) => {
     const headingRef = useRef(null);
@@ -112,7 +147,6 @@ const PlantList = ({ plants, message, isSearching }) => {
                             const scientificName = formatScientificName(plant.scientific_name);
                             const title = commonName || scientificName || 'Unnamed plant';
                             const showScientific = Boolean(scientificName) && scientificName !== title;
-                            const src = plantImageSrc(plant);
                             const care = [
                                 ['Lifecycle', presentCare(plant.cycle)],
                                 ['Watering', presentCare(plant.watering)],
@@ -127,9 +161,7 @@ const PlantList = ({ plants, message, isSearching }) => {
                             return (
                                 <li key={plant.id ?? `${title}-${index}`}>
                                     <article className="plant-card">
-                                        <div className={src === PLACEHOLDER_PLANT_SRC ? 'plant-photo is-fallback' : 'plant-photo'}>
-                                            <img src={src} alt={alt} />
-                                        </div>
+                                        <PlantPhoto plant={plant} alt={alt} />
                                         <div className="plant-body">
                                             <h3>{title}</h3>
                                             {showScientific ? (
@@ -169,9 +201,7 @@ const plantShape = PropTypes.shape({
         PropTypes.arrayOf(PropTypes.string),
         PropTypes.string,
     ]),
-    default_image: PropTypes.shape({
-        small_url: PropTypes.string,
-    }),
+    default_image: defaultImageShape,
     cycle: PropTypes.string,
     watering: PropTypes.string,
     sunlight: PropTypes.oneOfType([

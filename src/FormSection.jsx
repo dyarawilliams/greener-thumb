@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import PropTypes from 'prop-types';
-import { buildSpeciesListUrl, plantsFromSpeciesList } from './speciesList';
+import { buildSpeciesListUrl, pickPlantCards, plantsFromSpeciesList } from './speciesList';
 
 const QUESTIONS = [
     {
@@ -70,13 +70,6 @@ const FormSection = ({ setPlants, setMessage, setIsSearching, isSearching }) => 
         });
     };
 
-    const shuffleArray = (array) => {
-        for (let i = array.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [array[i], array[j]] = [array[j], array[i]];
-        }
-    };
-
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (inFlight.current) {
@@ -99,8 +92,7 @@ const FormSection = ({ setPlants, setMessage, setIsSearching, isSearching }) => 
             }
 
             if (validData.length > 0) {
-                shuffleArray(validData);
-                setPlants(validData.slice(0, 4));
+                setPlants(pickPlantCards(validData, 4));
                 setMessage(null);
             } else {
                 setPlants([]);
