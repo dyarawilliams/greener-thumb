@@ -52,6 +52,7 @@
         <li><a href="#scripts">Scripts</a></li>
       </ul>
     </li>
+    <li><a href="#deployment">Deployment</a></li>
     <li><a href="#roadmap">Roadmap</a></li>
     <li><a href="#contributing">Contributing</a></li>
     <li><a href="#license">License</a></li>
@@ -120,7 +121,7 @@ npm -v
    ```sh
    npm run dev
    ```
-   Vite prints a local URL. The default is `http://localhost:5173`. Restart the dev server after you change `.env`.
+   Vite prints a local URL. [`vite.config.js`](vite.config.js) sets `base` to `/greener-thumb/`, so the app is at `http://localhost:5173/greener-thumb/`. Restart the dev server after you change `.env`.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -161,12 +162,12 @@ The documented list body is `{ data: [...], to, per_page, current_page, from, la
 Each card shows:
 
 * Common name as the heading. Scientific names, when `scientific_name` is an array or string, appear under it in italics (arrays are joined with commas). If the common name is missing, the scientific name is the heading.
-* `default_image.small_url` when Perenual sends one, otherwise `/img/placeholder_plant.jpg`
+* `default_image.small_url` when Perenual sends one, otherwise `/greener-thumb/img/placeholder_plant.jpg`
 * Lifecycle (`cycle`), watering, and sunlight only when that list item includes them
 
 If the filtered list is empty, the message is `No results returned, please modify your selection and try again.` If the request throws, or the body is not a species list, the message is `Internal Server Error`.
 
-Before any search, the right-hand pane uses `/img/splash_plant1.jpg`. Vite serves [`public/img/splash_plant1.jpg`](public/img/splash_plant1.jpg) and [`public/img/placeholder_plant.jpg`](public/img/placeholder_plant.jpg) from the site root.
+The hero requests [`public/img/splash_plant1.jpg`](public/img/splash_plant1.jpg) at `/greener-thumb/img/splash_plant1.jpg`. Cards without a Perenual photo use [`public/img/placeholder_plant.jpg`](public/img/placeholder_plant.jpg) at `/greener-thumb/img/placeholder_plant.jpg`. Vite copies both files from `public/` and prefixes them with the base in [`vite.config.js`](vite.config.js).
 
 ### Scripts
 
@@ -181,12 +182,30 @@ From [`package.json`](package.json):
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
+<!-- DEPLOYMENT -->
+## Deployment
+
+The live site is [https://dyarawilliams.github.io/greener-thumb/](https://dyarawilliams.github.io/greener-thumb/).
+
+[`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) runs `npm ci` and `npm run build`, then deploys the `dist/` folder with the official GitHub Pages actions. It runs on every push to `main`, and it can be started manually from the Actions tab.
+
+After this workflow is on `main`, finish the repository setup:
+
+1. Open **Settings → Pages → Build and deployment** and set **Source** to **GitHub Actions**.
+2. Open **Settings → Secrets and variables → Actions** and add a repository secret named `VITE_PERENUAL_API_KEY`. The build step passes that secret to Vite.
+
+The site still builds and the page still renders if the secret is missing. Plant search then calls Perenual without a usable key and shows the existing error state.
+
+Vite inlines every `VITE_` variable into the client bundle. `VITE_PERENUAL_API_KEY` is visible in the built JavaScript to anyone who loads the site.
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
 <!-- ROADMAP -->
 ## Roadmap
 
 - [x] Call `https://perenual.com/api/v2/species-list`, the species-list route in the current Perenual docs.
 - [x] Send `poisonous` for pets or kids, `cycle` for lifespan, and `watering` for the water schedule. `edible`, `sunlight`, and `indoor=1` already matched the species-list docs.
-- [x] Load the splash and placeholder images from `/img/splash_plant1.jpg` and `/img/placeholder_plant.jpg`.
+- [x] Load the splash and placeholder images from `public/img/`, served under the Vite base (`/greener-thumb/img/splash_plant1.jpg` and `/greener-thumb/img/placeholder_plant.jpg`).
 - [ ] Report a missing `VITE_PERENUAL_API_KEY`, a non-OK response, and Perenual error payloads (invalid key, rate limit) in place of the generic `Internal Server Error` string.
 - [ ] Page through `species-list` results. The app requests the default page and then shuffles and keeps four plants.
 - [ ] Open a detail view for a chosen plant from the species details endpoint.

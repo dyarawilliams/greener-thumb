@@ -62,7 +62,7 @@ function App() {
                     <div className="hero-media">
                         <figure className="hero-photo">
                             <img
-                                src="/img/splash_plant1.jpg"
+                                src={`${import.meta.env.BASE_URL}img/splash_plant1.jpg`}
                                 alt="A person with raised arms standing beside a tall bird of paradise plant in a dark planter"
                             />
                         </figure>
